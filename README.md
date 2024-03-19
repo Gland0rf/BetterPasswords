@@ -1,7 +1,4 @@
 # BetterPasswords
-<<<<<<< HEAD
-
-=======
 <h1>Project Overview</h1>
 
 BetterPasswords is a Password Manager, that securely stores your passwords via AES (Advanced Encryption Standard), making them bascially mpossible to crack. For now, there only is a GUI, but maybe there will be CLI support in the furture.
