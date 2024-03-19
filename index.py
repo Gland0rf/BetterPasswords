@@ -6,8 +6,21 @@ from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
+data_path = os.path.join(os.getenv('APPDATA'), 'BetterPasswords')
+
+if not os.path.isdir(data_path):
+    os.mkdir(data_path)
+path = data_path + "\\data"
+if not os.path.isdir(path):
+    os.mkdir(path)
+salt_path = path + "\\salt.bin"
+if not os.path.exists(salt_path):
+    salt = get_random_bytes(32)
+    with open(salt_path, "wb") as f:
+        f.write(salt)
+
 def main_password_exists():
-    if os.path.exists("C:\\Betterpasswords\\data\\main.bin"):
+    if os.path.exists(f"{data_path}\\data\\main.bin"):
         return True
     return False
 
@@ -16,6 +29,7 @@ root = tk.Tk()
 main_password_existant = main_password_exists()
 
 def createMainPassword():
+    salt = open(data_path + "\\data\\salt.bin", "rb").read()
     password = main_password_input.get()
     if password == "":
         loginLabel.config(text="Password does not match criteria.")
@@ -24,15 +38,16 @@ def createMainPassword():
         key = PBKDF2("mainPassword", salt, dkLen=32)
         cipher = AES.new(key, AES.MODE_CBC)
         ciphered_data = cipher.encrypt(pad(password, AES.block_size))
-        with open("C:\\Betterpasswords\\data\\main.bin", "wb") as f:
+        with open(f"{data_path}\\data\\main.bin", "wb") as f:
             f.write(cipher.iv)
             f.write(ciphered_data)
         generateMainScreen()
             
 def checkMainPassword():
+    salt = open(data_path + "\\data\\salt.bin", "rb").read()
     enteredPassword = login_password.get()
     key = PBKDF2("mainPassword", salt, dkLen=32)
-    with open("C:\\Betterpasswords\\data\\main.bin", "rb") as f:
+    with open(f"{data_path}\\data\\main.bin", "rb") as f:
         iv = f.read(16)
         decrypt_pwd = f.read()
         cipher = AES.new(key, AES.MODE_CBC, iv=iv)
@@ -44,6 +59,7 @@ def checkMainPassword():
             generateMainScreen()
             
 def createPassword():
+    salt = open(data_path + "\\data\\salt.bin", "rb").read()
     name = create_pwd_name_field.get()
     pwd = create_pwd_data_field.get()
     
@@ -56,7 +72,7 @@ def createPassword():
         key = PBKDF2(name, salt, dkLen=32)
         cipher = AES.new(key, AES.MODE_CBC)
         ciphered_data = cipher.encrypt(pad(pwd, AES.block_size))
-        with open(f"C:\\Betterpasswords\\data\\{name}.bin", "wb") as f:
+        with open(f"{data_path}\\data\\{name}.bin", "wb") as f:
             f.write(cipher.iv)
             f.write(ciphered_data)
         
@@ -72,6 +88,7 @@ def createPassword():
         generateMainScreen()
         
 def findPassword():
+    salt = open(data_path + "\\data\\salt.bin", "rb").read()
     name = find_pwd_name_field.get()
     
     if(name == ""):
@@ -81,7 +98,7 @@ def findPassword():
     else:
         key = PBKDF2(name, salt, dkLen=32)
         try:
-            with open(f"C:\\Betterpasswords\\data\\{name}.bin", "rb") as f:
+            with open(f"{data_path}\\data\\{name}.bin", "rb") as f:
                 iv = f.read(16)
                 decrypt_pwd = f.read()
                 cipher = AES.new(key, AES.MODE_CBC, iv=iv)
@@ -97,14 +114,16 @@ def findPassword():
                 generateMainScreen()
         except FileNotFoundError:
             find_pwd_label.config(text="Could not find that password")
+    find_pwd_name_field.delete(0, tk.END)
             
 def resetMainPassword():
+    salt = open(data_path + "\\data\\salt.bin", "rb").read()
     old_pwd = change_main_pwd_old_field.get()
     new_pwd = change_main_pwd_new_field.get()
     
     key = PBKDF2("mainPassword", salt, dkLen=32)
     
-    with open("C:\\Betterpasswords\\data\\main.bin", "rb") as f:
+    with open(f"{data_path}\\data\\main.bin", "rb") as f:
         iv = f.read(16)
         decrypt_pwd = f.read()
         cipher = AES.new(key, AES.MODE_CBC, iv=iv)
@@ -117,9 +136,9 @@ def resetMainPassword():
             else:
                 #Decrypt all password with the old password, and encrypt them with the new one
                 password_list = {}
-                for path, dirnames, filenames in os.walk("C:\\Betterpasswords\\data"):
+                for path, dirnames, filenames in os.walk(f"{data_path}\\data"):
                     for file in filenames:
-                        if file != "main.bin":
+                        if file != "main.bin" and file != "salt.bin":
                             with open(f"{path}/{file}", "rb") as f:
                                 key = PBKDF2(file.split(".bin")[0], salt, dkLen=32)
                                 iv = f.read(16)
@@ -134,7 +153,7 @@ def resetMainPassword():
                     key = PBKDF2(file, salt, dkLen=32)
                     cipher = AES.new(key, AES.MODE_CBC)
                     ciphered_data = cipher.encrypt(pad(password, AES.block_size))
-                    with open(f"C:\\Betterpasswords\\data\\{file}.bin", "wb") as f:
+                    with open(f"{data_path}\\data\\{file}.bin", "wb") as f:
                         f.write(cipher.iv)
                         f.write(ciphered_data)
                         
@@ -143,7 +162,7 @@ def resetMainPassword():
                 key = PBKDF2("mainPassword", salt, dkLen=32)
                 cipher = AES.new(key, AES.MODE_CBC)
                 ciphered_data = cipher.encrypt(pad(password, AES.block_size))
-                with open("C:\\Betterpasswords\\data\\main.bin", "wb") as f:
+                with open(f"{data_path}\\data\\main.bin", "wb") as f:
                     f.write(cipher.iv)
                     f.write(ciphered_data)
                     
@@ -153,7 +172,7 @@ def resetMainPassword():
                 change_main_pwd_old_label.place_forget()
                 change_main_pwd_new_field.place_forget()
                 change_main_pwd_new_label.place_forget()
-                create_back_button.place_forget()
+                back_button.place_forget()
                     
                 event_label.config(text="Changed main Password!")
                 event_label.pack(pady=250)
@@ -161,7 +180,7 @@ def resetMainPassword():
                 
 def forgotPassword():
     #Wipe all data
-    for path, dirnames, filenames in os.walk("C:\\Betterpasswords\\data"):
+    for path, dirnames, filenames in os.walk(f"{data_path}\\data"):
         for file in filenames:
             os.remove(f"{path}/{file}")
     forgot_label.config(text="All data wiped. Main password reset. Plase restart the program.")
@@ -203,6 +222,8 @@ def generateMainScreen():
     login_button.place_forget()
     forgot_button.place_forget()
     
+    back_button.place_forget()
+    
     create_pwd_button.place(x=0, y=100, width=150, height=50)
     
     find_pwd_button.place(x=0, y=200, width=150, height=50)
@@ -228,7 +249,7 @@ def createPasswordScreen():
     create_pwd_data_label.place(x=512, y=350)
     
     init_pwd_button.place(x=270, y=400, width=250, height=50)
-    create_back_button.place(x=270, y=500, width=250, height=50)
+    back_button.place(x=270, y=500, width=250, height=50)
     
 def findPasswordScreen():
     event_label.pack_forget()
@@ -244,7 +265,7 @@ def findPasswordScreen():
     find_pwd_name_label.place(x=370, y=350)
     
     search_pwd_button.place(x=270, y=400, width=250, height=50)
-    create_back_button.place(x=270, y=500, width=250, height=50)
+    back_button.place(x=270, y=500, width=250, height=50)
     
 def changeMainPasswordScreen():
     event_label.pack_forget()
@@ -263,7 +284,7 @@ def changeMainPasswordScreen():
     change_main_pwd_new_label.place(x=502, y=350)
     
     switch_main_pwd_button.place(x=270, y=400, width=250, height=50)
-    create_back_button.place(x=270, y=500, width=250, height=50)
+    back_button.place(x=270, y=500, width=250, height=50)
     
 def forgotPasswordScreen():
     loginLabel.pack_forget()
@@ -283,7 +304,7 @@ def backToMain():
     create_pwd_name_label.place_forget()
     create_pwd_data_field.place_forget()
     create_pwd_data_label.place_forget()
-    create_back_button.place_forget()
+    back_button.place_forget()
     
     search_pwd_button.place_forget()
     find_pwd_label.pack_forget()
@@ -296,11 +317,11 @@ def backToMain():
     change_main_pwd_old_label.place_forget()
     change_main_pwd_new_field.place_forget()
     change_main_pwd_new_label.place_forget()
-    create_back_button.place_forget()
+    back_button.place_forget()
     generateMainScreen()
     
 def exit_program():
-    exit(1)
+    root.destroy()
 
 #Fonts
 text_font = Font(size=15)
@@ -318,7 +339,7 @@ login_button = tk.Button(root, text="Login", font=text_font, command=checkMainPa
 forgot_button = tk.Button(root, text="Forgot Password", font=text_font, command=forgotPasswordScreen)
 
 #Init Forgot Password Screen Data
-forgot_label = tk.Label(root, text="We cannot restore your saved passwords without your main password.\nResetting it will delete ALL saved password.\nDo you wish to proceed?")
+forgot_label = tk.Label(root, text="We cannot restore your saved passwords without your main password.\nResetting it will delete ALL saved passwords.\nDo you wish to proceed?")
 forgot_yes_button = tk.Button(root, text="Yes", font=button_font, command=forgotPassword)
 forgot_no_button = tk.Button(root, text="No", font=button_font, command=loginScreen)
 
@@ -336,7 +357,7 @@ create_pwd_name_field = tk.Entry(root, width=30, justify="center")
 create_pwd_data_field = tk.Entry(root, show="*", width=30, justify="center")
 create_pwd_name_label = tk.Label(root, text="Name")
 create_pwd_data_label = tk.Label(root, text="Password")
-create_back_button = tk.Button(root, text="Back", font=button_font, command=backToMain)
+back_button = tk.Button(root, text="Back", font=button_font, command=backToMain)
 
 #Init find menu data
 search_pwd_button = tk.Button(root, text="Find Password", font=button_font, command=findPassword)
@@ -352,18 +373,11 @@ change_main_pwd_new_field = tk.Entry(root, show="*", width=30, justify="center")
 change_main_pwd_old_label = tk.Label(root, text="Old Password")
 change_main_pwd_new_label = tk.Label(root, text="New Password")
 
-if not os.path.exists("C:\\Betterpasswords"):
-    os.mkdir("C:\\Betterpasswords")
-    path = "C:\\Betterpasswords\\data"
-    if not os.path.isdir(path):
-        os.mkdir(path)
-
-salt = b'\xc2r\x9f\x04\xfb\xa4\x15\xce\xbeCB`j)\xf1\xa6\xe3\xe1W\x90\x16\xa9\xdc\x89\xc0\xde\x8d3\xb6\xfc\xb1A'
-
 font = Font(size="15")
         
 loginScreen()
-    
+
 root.geometry("800x600")
+root.resizable(False, False)
 root.title("Password Manager")
 root.mainloop()
