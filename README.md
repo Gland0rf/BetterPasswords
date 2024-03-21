@@ -1,7 +1,7 @@
 # BetterPasswords
 <h1>Project Overview</h1>
 
-BetterPasswords is a Password Manager, that securely stores your passwords via AES (Advanced Encryption Standard), making them really hard to crack. For now, there only is a GUI, but maybe there will be CLI support in the furture.
+BetterPasswords is a Password Manager, that securely stores your passwords via AES (Advanced Encryption Standard), making them really hard to crack.
 This program is written in python and was compiled to an exe, only making it available on windows devices.
 
 <h1>How to install/uninstall</h1>
